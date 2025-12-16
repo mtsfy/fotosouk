@@ -2,10 +2,10 @@ package utils
 
 import (
 	"errors"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/mtsfy/fotosouk/internal/config"
 )
 
 type Token struct {
@@ -20,12 +20,12 @@ func GenerateToken(id int, userName string) (*Token, error) {
 	t := &Token{}
 	var err error
 
-	accessSecret := os.Getenv("JWT_ACCESS_SECRET")
+	accessSecret := config.Config("JWT_ACCESS_SECRET")
 	if accessSecret == "" {
 		return nil, errors.New("JWT_ACCESS_SECRET is not set")
 	}
 
-	refreshSecret := os.Getenv("JWT_REFRESH_SECRET")
+	refreshSecret := config.Config("JWT_REFRESH_SECRET")
 	if refreshSecret == "" {
 		return nil, errors.New("JWT_REFRESH_SECRET is not set")
 	}
