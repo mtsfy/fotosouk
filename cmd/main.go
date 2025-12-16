@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/mtsfy/fotosouk/internal/config"
 	"github.com/mtsfy/fotosouk/internal/database"
 	"github.com/mtsfy/fotosouk/internal/router"
 )
@@ -18,5 +19,14 @@ func main() {
 	database.Connect()
 
 	router.SetupRoutes(app)
-	log.Fatal(app.Listen(":3000"))
+
+	port := config.Config("PORT")
+	if port == "" {
+		port = "3000"
+	}
+
+	log.Printf("Starting server on :%s", port)
+	if err := app.Listen(":" + port); err != nil {
+		log.Fatalf("server error: %v", err)
+	}
 }

@@ -1,0 +1,9 @@
+*.env
+
+.DS_Store
+.gitignore
+.dockerignore
+
+Makefile
+README.md
+Dockerfile
