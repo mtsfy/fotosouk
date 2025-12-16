@@ -2,10 +2,10 @@ package database
 
 import (
 	"fmt"
-	"os/user"
 	"strconv"
 
 	"github.com/mtsfy/fotosouk/internal/config"
+	"github.com/mtsfy/fotosouk/internal/user"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
