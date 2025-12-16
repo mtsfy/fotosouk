@@ -9,6 +9,7 @@ import (
 
 type UserRepository interface {
 	Create(ctx context.Context, u *user.User) (*user.User, error)
+	GetUserByUsername(ctx context.Context, username string) (*user.User, error)
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
 	ExistsByUserName(ctx context.Context, username string) (bool, error)
 }
@@ -30,4 +31,10 @@ func (r *PgRepo) ExistsByUserName(ctx context.Context, username string) (bool, e
 	var count int64
 	result := database.DB.WithContext(ctx).Model(&user.User{}).Where("username = ?", username).Count(&count)
 	return count > 0, result.Error
+}
+
+func (r *PgRepo) GetUserByUsername(ctx context.Context, username string) (*user.User, error) {
+	var u *user.User
+	result := database.DB.WithContext(ctx).Model(&user.User{}).Where("username = ?", username).Find(&u)
+	return u, result.Error
 }

@@ -60,3 +60,25 @@ func (s *AuthService) Register(ctx context.Context, firstName, lastName, email, 
 
 	return s.repo.Create(ctx, u)
 }
+
+func (s *AuthService) Login(ctx context.Context, username, password string) (*user.User, error) {
+	if len(username) == 0 {
+		return nil, errors.New("username is required")
+	}
+
+	if len(password) == 0 {
+		return nil, errors.New("password is required")
+	}
+
+	u, err := s.repo.GetUserByUsername(ctx, username)
+	if err != nil {
+		return nil, errors.New("invalid username or password")
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(u.HashedPassword), []byte(password))
+	if err != nil {
+		return nil, errors.New("invalid username or password")
+	}
+
+	return u, nil
+}
