@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"time"
 
 	"github.com/mtsfy/fotosouk/internal/database"
 	"github.com/mtsfy/fotosouk/internal/user"
@@ -12,6 +13,10 @@ type UserRepository interface {
 	GetUserByUsername(ctx context.Context, username string) (*user.User, error)
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
 	ExistsByUserName(ctx context.Context, username string) (bool, error)
+
+	SaveRefreshToken(ctx context.Context, token *RefreshToken) error
+	GetRefreshToken(ctx context.Context, token string) (*RefreshToken, error)
+	RevokeRefreshToken(ctx context.Context, token string) error
 }
 
 type PgRepo struct{}
@@ -37,4 +42,23 @@ func (r *PgRepo) GetUserByUsername(ctx context.Context, username string) (*user.
 	var u *user.User
 	result := database.DB.WithContext(ctx).Model(&user.User{}).Where("username = ?", username).Find(&u)
 	return u, result.Error
+}
+
+func (r *PgRepo) SaveRefreshToken(ctx context.Context, token *RefreshToken) error {
+	return database.DB.WithContext(ctx).Create(token).Error
+}
+
+func (r *PgRepo) GetRefreshToken(ctx context.Context, token string) (*RefreshToken, error) {
+	var rt RefreshToken
+	err := database.DB.WithContext(ctx).
+		Where("token = ? AND is_revoked = ? AND expires_at > ?", token, false, time.Now()).
+		First(&rt).Error
+	return &rt, err
+}
+
+func (r *PgRepo) RevokeRefreshToken(ctx context.Context, token string) error {
+	return database.DB.WithContext(ctx).
+		Model(&RefreshToken{}).
+		Where("token = ?", token).
+		Update("is_revoked", true).Error
 }

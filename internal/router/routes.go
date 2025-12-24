@@ -9,6 +9,7 @@ import (
 func SetupRoutes(app *fiber.App) {
 	app.Post("/register", auth.HandleRegister)
 	app.Post("/login", auth.HandleLogin)
+	app.Post("/refresh", auth.HandleRefresh)
 
 	protected := app.Group("/images")
 	protected.Use(auth.JWTMiddleware())

@@ -3,8 +3,10 @@ package auth
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/mtsfy/fotosouk/internal/user"
+	"github.com/mtsfy/fotosouk/internal/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -61,24 +63,68 @@ func (s *AuthService) Register(ctx context.Context, firstName, lastName, email, 
 	return s.repo.Create(ctx, u)
 }
 
-func (s *AuthService) Login(ctx context.Context, username, password string) (*user.User, error) {
+func (s *AuthService) Login(ctx context.Context, username, password string) (*user.User, *utils.Token, error) {
 	if len(username) == 0 {
-		return nil, errors.New("username is required")
+		return nil, nil, errors.New("username is required")
 	}
 
 	if len(password) == 0 {
-		return nil, errors.New("password is required")
+		return nil, nil, errors.New("password is required")
 	}
 
 	u, err := s.repo.GetUserByUsername(ctx, username)
 	if err != nil {
-		return nil, errors.New("invalid username or password")
+		return nil, nil, errors.New("invalid username or password")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(u.HashedPassword), []byte(password))
 	if err != nil {
-		return nil, errors.New("invalid username or password")
+		return nil, nil, errors.New("invalid username or password")
 	}
 
-	return u, nil
+	token, err := utils.GenerateToken(u.ID, u.Username)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rt := &RefreshToken{
+		UserID:    u.ID,
+		Token:     token.RefreshToken,
+		ExpiresAt: time.Unix(token.RefreshExpiresAt, 0),
+	}
+	if err := s.repo.SaveRefreshToken(ctx, rt); err != nil {
+		return nil, nil, err
+	}
+
+	return u, token, nil
+}
+
+func (s *AuthService) RefreshAccessToken(ctx context.Context, refreshToken string) (*utils.Token, error) {
+	// check refresh token exists and is not revoked
+	rt, err := s.repo.GetRefreshToken(ctx, refreshToken)
+	if err != nil {
+		return nil, errors.New("invalid or expired refresh token")
+	}
+
+	// check expiration
+	if time.Now().After(rt.ExpiresAt) {
+		return nil, errors.New("refresh token expired")
+	}
+
+	// check jwt signature
+	claims, err := utils.ValidateRefreshToken(refreshToken)
+	if err != nil {
+		return nil, errors.New("invalid refresh token")
+	}
+
+	userID := int(claims["user_id"].(float64))
+	username := claims["username"].(string)
+
+	// create new access token
+	token, err := utils.GenerateToken(userID, username)
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }

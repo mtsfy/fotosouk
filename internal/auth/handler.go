@@ -2,7 +2,6 @@ package auth
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/mtsfy/fotosouk/internal/utils"
 )
 
 type RegisterRequest struct {
@@ -67,17 +66,10 @@ func HandleLogin(c *fiber.Ctx) error {
 		})
 	}
 
-	u, err := authService.Login(c.Context(), req.Username, req.Password)
+	u, token, err := authService.Login(c.Context(), req.Username, req.Password)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
-		})
-	}
-
-	token, err := utils.GenerateToken(u.ID, u.Username)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "failed to generate token",
 		})
 	}
 
@@ -106,5 +98,35 @@ func HandleLogin(c *fiber.Ctx) error {
 		Email:    u.Email,
 		Username: u.Username,
 		Token:    token.AccessToken,
+	})
+}
+
+func HandleRefresh(c *fiber.Ctx) error {
+	refreshToken := c.Cookies("fotosouk_refresh")
+	if refreshToken == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "refresh token required",
+		})
+	}
+
+	token, err := authService.RefreshAccessToken(c.Context(), refreshToken)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "fotosouk_access",
+		Value:    token.AccessToken,
+		MaxAge:   24 * 60 * 60,
+		Path:     "/",
+		Secure:   true,
+		HTTPOnly: true,
+		SameSite: fiber.CookieSameSiteStrictMode,
+	})
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"accessToken": token.AccessToken,
 	})
 }

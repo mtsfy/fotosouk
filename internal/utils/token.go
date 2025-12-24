@@ -56,3 +56,27 @@ func GenerateToken(id int, userName string) (*Token, error) {
 
 	return t, nil
 }
+
+func ValidateRefreshToken(tokenString string) (jwt.MapClaims, error) {
+	refreshSecret := config.Config("JWT_REFRESH_SECRET")
+	if refreshSecret == "" {
+		return nil, errors.New("JWT_REFRESH_SECRET is not set")
+	}
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte(refreshSecret), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, errors.New("invalid token")
+}

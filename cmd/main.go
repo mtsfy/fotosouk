@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/mtsfy/fotosouk/internal/auth"
 	"github.com/mtsfy/fotosouk/internal/config"
 	"github.com/mtsfy/fotosouk/internal/database"
 	"github.com/mtsfy/fotosouk/internal/router"
@@ -17,6 +18,9 @@ func main() {
 	})
 
 	database.Connect()
+	if err := auth.Migrate(database.DB); err != nil {
+		log.Fatalf("failed to migrate auth schemas: %v", err)
+	}
 
 	router.SetupRoutes(app)
 
