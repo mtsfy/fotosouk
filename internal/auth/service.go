@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/mtsfy/fotosouk/internal/user"
+	"github.com/mtsfy/fotosouk/internal/models"
 	"github.com/mtsfy/fotosouk/internal/utils"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -18,7 +18,7 @@ func NewAuthService(repo UserRepository) *AuthService {
 	return &AuthService{repo: repo}
 }
 
-func (s *AuthService) Register(ctx context.Context, firstName, lastName, email, username, password string) (*user.User, error) {
+func (s *AuthService) Register(ctx context.Context, firstName, lastName, email, username, password string) (*models.User, error) {
 	if len(username) == 0 {
 		return nil, errors.New("username is required")
 	}
@@ -52,7 +52,7 @@ func (s *AuthService) Register(ctx context.Context, firstName, lastName, email, 
 		return nil, err
 	}
 
-	u := &user.User{
+	u := &models.User{
 		FirstName:      firstName,
 		LastName:       lastName,
 		Email:          email,
@@ -63,7 +63,7 @@ func (s *AuthService) Register(ctx context.Context, firstName, lastName, email, 
 	return s.repo.Create(ctx, u)
 }
 
-func (s *AuthService) Login(ctx context.Context, username, password string) (*user.User, *utils.Token, error) {
+func (s *AuthService) Login(ctx context.Context, username, password string) (*models.User, *utils.Token, error) {
 	if len(username) == 0 {
 		return nil, nil, errors.New("username is required")
 	}
@@ -87,7 +87,7 @@ func (s *AuthService) Login(ctx context.Context, username, password string) (*us
 		return nil, nil, err
 	}
 
-	rt := &RefreshToken{
+	rt := &models.RefreshToken{
 		UserID:    u.ID,
 		Token:     token.RefreshToken,
 		ExpiresAt: time.Unix(token.RefreshExpiresAt, 0),

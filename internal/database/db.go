@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/mtsfy/fotosouk/internal/config"
-	"github.com/mtsfy/fotosouk/internal/user"
+	"github.com/mtsfy/fotosouk/internal/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -67,7 +67,7 @@ func Connect() {
 
 	// retry for migrations
 	for i := 0; i < 3; i++ {
-		if err := DB.AutoMigrate(&user.User{}); err != nil {
+		if err := DB.AutoMigrate(&models.User{}); err != nil {
 			if i == 2 {
 				log.Fatalf("failed to migrate database schemas: %v", err)
 			}

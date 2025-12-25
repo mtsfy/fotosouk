@@ -1,7 +1,10 @@
 package auth
 
-import "gorm.io/gorm"
+import (
+	"github.com/mtsfy/fotosouk/internal/models"
+	"gorm.io/gorm"
+)
 
 func Migrate(db *gorm.DB) error {
-	return db.AutoMigrate(&RefreshToken{})
+	return db.AutoMigrate(&models.RefreshToken{})
 }
