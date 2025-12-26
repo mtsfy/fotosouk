@@ -1,7 +1,17 @@
 package image
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"context"
+
+	"github.com/mtsfy/fotosouk/internal/models"
+)
 
 type ImageRepository interface {
-	UploadImage(ctx *fiber.Ctx) error
+	Create(ctx context.Context, img *models.Image) error
+}
+
+type PgRepo struct{}
+
+func (r *PgRepo) Create(ctx context.Context, img *models.Image) error {
+	return nil
 }
