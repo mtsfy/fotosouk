@@ -22,9 +22,16 @@ type User struct {
 }
 
 type Image struct {
-	ID     int    `gorm:"primaryKey"`
-	Url    string `gorm:"type:text;not null;"`
-	UserID int    `gorm:"not null;index"`
+	ID     int `gorm:"primaryKey"`
+	UserID int `gorm:"not null;index"`
+
+	Width  int `gorm:"default:0"`
+	Height int `gorm:"default:0"`
+
+	Filename string `gorm:"type:varchar(255);not null"`
+	Url      string `gorm:"type:text;not null;"`
+	MimeType string `gorm:"type:varchar(50);not null;"`
+	FileSize int64  `gorm:"not null"`
 
 	CreatedAt time.Time    `gorm:"autoCreateTime"`
 	UpdatedAt time.Time    `gorm:"autoUpdateTime"`
