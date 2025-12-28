@@ -5,13 +5,20 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var imageService *ImageService
+var imageService = NewImageService(&PgRepo{})
 
 func HandleUploadImage(c *fiber.Ctx) error {
-	user := c.Locals("jwt").(*jwt.Token)
-	claims := user.Claims.(jwt.MapClaims)
+	token, ok := c.Locals("jwt").(*jwt.Token)
+	if !ok {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
 
-	userID := claims["user_id"].(float64)
+	claims := token.Claims.(jwt.MapClaims)
+
+	uid, ok := claims["user_id"].(float64)
+	if !ok {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
 
 	fh, err := c.FormFile("image")
 	if err != nil {
@@ -20,6 +27,7 @@ func HandleUploadImage(c *fiber.Ctx) error {
 		})
 	}
 
+	userID := int(uid)
 	file, err := fh.Open()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -32,12 +40,21 @@ func HandleUploadImage(c *fiber.Ctx) error {
 	fileSize := fh.Size
 	mimeType := fh.Header.Get("Content-Type")
 
-	_, err = imageService.UploadImage(c.Context(), int(userID), filename, file, fileSize, mimeType)
+	img, err := imageService.UploadImage(c.Context(), userID, filename, file, fileSize, mimeType)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "upload"})
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"id":         img.ID,
+		"width":      img.Width,
+		"height":     img.Height,
+		"filename":   img.Filename,
+		"url":        img.Url,
+		"mime_type":  img.MimeType,
+		"file_size":  img.FileSize,
+		"created_at": img.CreatedAt,
+	})
 }
