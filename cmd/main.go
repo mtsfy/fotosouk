@@ -9,6 +9,7 @@ import (
 	"github.com/mtsfy/fotosouk/internal/database"
 	"github.com/mtsfy/fotosouk/internal/image"
 	"github.com/mtsfy/fotosouk/internal/router"
+	"github.com/mtsfy/fotosouk/internal/storage"
 )
 
 func main() {
@@ -26,7 +27,18 @@ func main() {
 		log.Fatalf("failed to migrate image: %v", err)
 	}
 
-	router.SetupRoutes(app)
+	stor, err := storage.NewS3Storage(
+		config.Config("AWS_S3_BUCKET"),
+		config.Config("AWS_S3_REGION"),
+	)
+	if err != nil {
+		log.Fatalf("failed to init storage: %v", err)
+	}
+
+	imgSvc := image.NewImageService(&image.PgRepo{}, stor)
+	authSvc := auth.NewAuthService(&auth.PgRepo{})
+
+	router.SetupRoutes(app, imgSvc, authSvc)
 
 	port := config.Config("PORT")
 	if port == "" {

@@ -6,12 +6,12 @@ import (
 	"github.com/mtsfy/fotosouk/internal/image"
 )
 
-func SetupRoutes(app *fiber.App) {
-	app.Post("/register", auth.HandleRegister)
-	app.Post("/login", auth.HandleLogin)
-	app.Post("/refresh", auth.HandleRefresh)
+func SetupRoutes(app *fiber.App, imgSvc *image.ImageService, authSvc *auth.AuthService) {
+	app.Post("/register", auth.HandleRegister(authSvc))
+	app.Post("/login", auth.HandleLogin(authSvc))
+	app.Post("/refresh", auth.HandleRefresh(authSvc))
 
 	protected := app.Group("/images")
 	protected.Use(auth.JWTMiddleware())
-	protected.Get("/", image.HandleUploadImage)
+	protected.Get("/", image.HandleUploadImage(imgSvc))
 }
