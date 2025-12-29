@@ -10,6 +10,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
+type Storage interface {
+	Upload(ctx context.Context, path string, file io.Reader) (string, error)
+}
+
 type S3Storage struct {
 	client *s3.Client
 	bucket string

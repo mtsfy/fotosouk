@@ -12,14 +12,16 @@ import (
 	"strings"
 
 	"github.com/mtsfy/fotosouk/internal/models"
+	"github.com/mtsfy/fotosouk/internal/storage"
 )
 
 type ImageService struct {
-	repo ImageRepository
+	repo    ImageRepository
+	storage storage.Storage
 }
 
-func NewImageService(repo ImageRepository) *ImageService {
-	return &ImageService{repo: repo}
+func NewImageService(repo ImageRepository, storage storage.Storage) *ImageService {
+	return &ImageService{repo, storage}
 }
 
 func (s *ImageService) UploadImage(ctx context.Context, userID int, filename string, file io.Reader, fileSize int64, mimeType string) (*models.Image, error) {
