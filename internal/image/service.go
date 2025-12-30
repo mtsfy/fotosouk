@@ -71,3 +71,7 @@ func (s *ImageService) UploadImage(ctx context.Context, userID int, filename str
 func (s *ImageService) GetAllImages(ctx context.Context, userID int) ([]*models.Image, error) {
 	return s.repo.ListByUser(ctx, userID)
 }
+
+func (s *ImageService) GetImageDetail(ctx context.Context, userID int, imgID int) (*models.Image, error) {
+	return s.repo.GetImageByID(ctx, userID, imgID)
+}

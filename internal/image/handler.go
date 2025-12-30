@@ -1,6 +1,8 @@
 package image
 
 import (
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -87,6 +89,45 @@ func HandleGetAllImages(svc *ImageService) fiber.Handler {
 
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"images": images,
+		})
+	}
+}
+
+func HandleGetImage(svc *ImageService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		token, ok := c.Locals("jwt").(*jwt.Token)
+		if !ok {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+
+		uid, ok := claims["user_id"].(float64)
+		if !ok {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+
+		userID := int(uid)
+		id := c.Params("id")
+		imgID, err := strconv.Atoi(id)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "invalid image id",
+			})
+		}
+
+		img, err := svc.GetImageDetail(c.Context(), userID, imgID)
+		if err != nil {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "image not found",
+			})
+		}
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"image": img,
 		})
 	}
 }
