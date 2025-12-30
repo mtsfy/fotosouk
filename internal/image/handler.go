@@ -59,3 +59,34 @@ func HandleUploadImage(svc *ImageService) fiber.Handler {
 		})
 	}
 }
+
+func HandleGetAllImages(svc *ImageService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		token, ok := c.Locals("jwt").(*jwt.Token)
+		if !ok {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+
+		uid, ok := claims["user_id"].(float64)
+		if !ok {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+
+		userID := int(uid)
+		images, err := svc.GetAllImages(c.Context(), userID)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"images": images,
+		})
+	}
+}

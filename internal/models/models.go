@@ -32,6 +32,7 @@ type Image struct {
 	Url      string `gorm:"type:text;not null;"`
 	MimeType string `gorm:"type:varchar(50);not null;"`
 	FileSize int64  `gorm:"not null"`
+	Format   string `gorm:"type:varchar(50);not null"`
 
 	CreatedAt time.Time    `gorm:"autoCreateTime"`
 	UpdatedAt time.Time    `gorm:"autoUpdateTime"`

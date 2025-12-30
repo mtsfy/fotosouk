@@ -13,5 +13,6 @@ func SetupRoutes(app *fiber.App, imgSvc *image.ImageService, authSvc *auth.AuthS
 
 	protected := app.Group("/images")
 	protected.Use(auth.JWTMiddleware())
-	protected.Get("/", image.HandleUploadImage(imgSvc))
+	protected.Post("/", image.HandleUploadImage(imgSvc))
+	protected.Get("/", image.HandleGetAllImages(imgSvc)) //get all users images
 }
