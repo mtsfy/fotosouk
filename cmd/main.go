@@ -29,7 +29,7 @@ func main() {
 
 	stor, err := storage.NewS3Storage(
 		config.Config("AWS_S3_BUCKET"),
-		config.Config("AWS_S3_REGION"),
+		config.Config("AWS_REGION"),
 	)
 	if err != nil {
 		log.Fatalf("failed to init storage: %v", err)

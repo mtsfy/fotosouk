@@ -1,6 +1,7 @@
 package image
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -24,7 +25,7 @@ func NewImageService(repo ImageRepository, storage storage.Storage) *ImageServic
 	return &ImageService{repo, storage}
 }
 
-func (s *ImageService) UploadImage(ctx context.Context, userID int, filename string, file io.Reader, fileSize int64, mimeType string) (*models.Image, error) {
+func (s *ImageService) UploadImage(ctx context.Context, userID int, filename string, r io.Reader, fileSize int64, mimeType string) (*models.Image, error) {
 	fmt.Println(filename, mimeType, fileSize)
 
 	if float64(fileSize) > math.Pow(10, 7) {
@@ -37,21 +38,31 @@ func (s *ImageService) UploadImage(ctx context.Context, userID int, filename str
 		return nil, errors.New("unsupported image type")
 	}
 
-	img, format, err := image.Decode(file)
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+
+	img, format, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
 		return nil, errors.New("unable to decode image file")
 	}
 
 	fmt.Println(img.Bounds(), format)
+	path := fmt.Sprintf("images/%s", filename)
+	url, err := s.storage.Upload(ctx, path, bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
 
 	newImg := &models.Image{
 		UserID:   userID,
 		Width:    img.Bounds().Dx(),
 		Height:   img.Bounds().Dy(),
 		Filename: filename,
-		Url:      "", // for now
+		Url:      url,
 		MimeType: mimeType,
-		FileSize: fileSize,
+		FileSize: int64(len(data)),
 	}
 
 	return s.repo.Create(ctx, newImg)

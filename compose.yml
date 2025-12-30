@@ -25,6 +25,8 @@ services:
     container_name: fotosouk-app
     env_file:
       - .env
+    environment:
+      AWS_EC2_METADATA_DISABLED: "true"
     ports:
       - "3000:3000"
     volumes:

@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -21,6 +22,13 @@ type S3Storage struct {
 }
 
 func NewS3Storage(bucket, region string) (*S3Storage, error) {
+	if bucket == "" {
+		return nil, errors.New("bucket is required")
+	}
+	if region == "" {
+		return nil, errors.New("region is required")
+	}
+
 	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(region))
 	if err != nil {
 		return nil, err
