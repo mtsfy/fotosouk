@@ -75,3 +75,7 @@ func (s *ImageService) GetAllImages(ctx context.Context, userID int) ([]*models.
 func (s *ImageService) GetImageDetail(ctx context.Context, userID int, imgID int) (*models.Image, error) {
 	return s.repo.GetImageByID(ctx, userID, imgID)
 }
+
+func (s *ImageService) TransformImage(ctx context.Context) (*models.Image, error) {
+	return nil, nil
+}

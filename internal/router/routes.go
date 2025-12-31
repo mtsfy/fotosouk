@@ -15,5 +15,6 @@ func SetupRoutes(app *fiber.App, imgSvc *image.ImageService, authSvc *auth.AuthS
 	protected.Use(auth.JWTMiddleware())
 	protected.Post("/", image.HandleUploadImage(imgSvc))
 	protected.Get("/", image.HandleGetAllImages(imgSvc))
+	protected.Post("/:id/transform", image.HandleTransform(imgSvc))
 	protected.Get("/:id", image.HandleGetImage(imgSvc))
 }

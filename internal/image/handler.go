@@ -1,6 +1,8 @@
 package image
 
 import (
+	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -129,5 +131,45 @@ func HandleGetImage(svc *ImageService) fiber.Handler {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"image": img,
 		})
+	}
+}
+
+type TransformRequest struct {
+	Transformations struct {
+		Resize struct {
+			Width  int `json:"width"`
+			Height int `json:"height"`
+		} `json:"resize"`
+		Crop struct {
+			Width  int `json:"width"`
+			Height int `json:"height"`
+			X      int `json:"x"`
+			Y      int `json:"y"`
+		} `json:"crop"`
+		Rotate  int    `json:"rotate"`
+		Format  string `json:"format"`
+		Filters struct {
+			Grayscale bool `json:"grayscale"`
+			Sepia     bool `json:"sepia"`
+		} `json:"filters"`
+	} `json:"transformations"`
+}
+
+func HandleTransform(svc *ImageService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		imgID := c.Params("id")
+		if imgID == "" {
+			return errors.New("imgID required")
+		}
+
+		var req TransformRequest
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(400).JSON(fiber.Map{
+				"message": err.Error(),
+			})
+		}
+
+		fmt.Println(imgID)
+		return nil
 	}
 }
