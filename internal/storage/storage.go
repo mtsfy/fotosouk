@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -13,6 +14,7 @@ import (
 
 type Storage interface {
 	Upload(ctx context.Context, path string, file io.Reader) (string, error)
+	Download(ctx context.Context, url string) ([]byte, error)
 }
 
 type S3Storage struct {
@@ -54,4 +56,25 @@ func (s *S3Storage) Upload(ctx context.Context, path string, file io.Reader) (st
 
 	url := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", s.bucket, s.region, path)
 	return url, nil
+}
+
+func (s *S3Storage) Download(ctx context.Context, url string) ([]byte, error) {
+	prefix := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/", s.bucket, s.region)
+	key := strings.TrimPrefix(url, prefix)
+
+	out, err := s.client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	defer out.Body.Close()
+
+	img, err := io.ReadAll(out.Body)
+	if err != nil {
+		return nil, err
+	}
+	return img, nil
 }
