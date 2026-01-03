@@ -10,6 +10,7 @@ import (
 	"github.com/mtsfy/fotosouk/internal/image"
 	"github.com/mtsfy/fotosouk/internal/router"
 	"github.com/mtsfy/fotosouk/internal/storage"
+	"github.com/mtsfy/fotosouk/internal/transformer"
 )
 
 func main() {
@@ -35,7 +36,7 @@ func main() {
 		log.Fatalf("failed to init storage: %v", err)
 	}
 
-	imgSvc := image.NewImageService(&image.PgRepo{}, stor)
+	imgSvc := image.NewImageService(&image.PgRepo{}, stor, &transformer.GoImageTransformer{})
 	authSvc := auth.NewAuthService(&auth.PgRepo{})
 
 	router.SetupRoutes(app, imgSvc, authSvc)

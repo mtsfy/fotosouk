@@ -14,15 +14,17 @@ import (
 
 	"github.com/mtsfy/fotosouk/internal/models"
 	"github.com/mtsfy/fotosouk/internal/storage"
+	"github.com/mtsfy/fotosouk/internal/transformer"
 )
 
 type ImageService struct {
-	repo    ImageRepository
-	storage storage.Storage
+	repo        ImageRepository
+	storage     storage.Storage
+	transformer transformer.Transformer
 }
 
-func NewImageService(repo ImageRepository, storage storage.Storage) *ImageService {
-	return &ImageService{repo, storage}
+func NewImageService(repo ImageRepository, storage storage.Storage, trans transformer.Transformer) *ImageService {
+	return &ImageService{repo, storage, trans}
 }
 
 func (s *ImageService) UploadImage(ctx context.Context, userID int, filename string, r io.Reader, fileSize int64, mimeType string) (*models.Image, error) {
