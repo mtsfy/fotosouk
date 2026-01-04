@@ -12,3 +12,4 @@ Fotosouk is an image processing service.
 
 - Go
 - JWT
+- AWS S3
