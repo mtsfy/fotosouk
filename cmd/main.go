@@ -36,7 +36,7 @@ func main() {
 		log.Fatalf("failed to init storage: %v", err)
 	}
 
-	imgSvc := image.NewImageService(&image.PgRepo{}, stor, &transformer.GoImageTransformer{})
+	imgSvc := image.NewImageService(&image.PgRepo{}, stor, &transformer.ImageTransformer{})
 	authSvc := auth.NewAuthService(&auth.PgRepo{})
 
 	router.SetupRoutes(app, imgSvc, authSvc)

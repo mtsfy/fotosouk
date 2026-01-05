@@ -7,15 +7,18 @@ import (
 	"image/draw"
 	_ "image/jpeg"
 	_ "image/png"
+
+	xdraw "golang.org/x/image/draw"
 )
 
 type Transformer interface {
 	Crop(ctx context.Context, img image.Image, x, y, width, height int) (image.Image, error)
+	Resize(ctx context.Context, img image.Image, width, height int) (image.Image, error)
 }
 
-type GoImageTransformer struct{}
+type ImageTransformer struct{}
 
-func (t *GoImageTransformer) Crop(ctx context.Context, img image.Image, x, y, width, height int) (image.Image, error) {
+func (t *ImageTransformer) Crop(ctx context.Context, img image.Image, x, y, width, height int) (image.Image, error) {
 	if width <= 0 || height <= 0 {
 		return nil, errors.New("width and height must be positive")
 	}
@@ -38,5 +41,15 @@ func (t *GoImageTransformer) Crop(ctx context.Context, img image.Image, x, y, wi
 
 	dst := image.NewRGBA(image.Rect(0, 0, width, height))
 	draw.Draw(dst, dst.Bounds(), img, cropRect.Min, draw.Src)
+	return dst, nil
+}
+
+func (t *ImageTransformer) Resize(ctx context.Context, img image.Image, width, height int) (image.Image, error) {
+	if width <= 0 || height <= 0 {
+		return nil, errors.New("width and height must be positive")
+	}
+
+	dst := image.NewRGBA(image.Rect(0, 0, width, height))
+	xdraw.CatmullRom.Scale(dst, dst.Bounds(), img, img.Bounds(), xdraw.Over, nil)
 	return dst, nil
 }
