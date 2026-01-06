@@ -113,8 +113,6 @@ func (s *ImageService) TransformImage(ctx context.Context, userID, imageID int, 
 		format = ogImg.MimeType
 	}
 
-	fmt.Printf("Original dimensions: %d x %d\n", ogImg.Width, ogImg.Height)
-
 	if opts.Crop.Width > 0 && opts.Crop.Height > 0 {
 		imgData, err = s.transformer.Crop(ctx, imgData, opts.Crop.Width, opts.Crop.Height, format)
 		if err != nil {
@@ -175,4 +173,18 @@ func (s *ImageService) TransformImage(ctx context.Context, userID, imageID int, 
 	ogImg.Url = newUrl
 
 	return s.repo.Update(ctx, ogImg, userID)
+}
+
+func (s *ImageService) DeleteImage(ctx context.Context, userID, imageID int) error {
+	img, err := s.repo.GetImageByID(ctx, userID, imageID)
+	if err != nil {
+		return errors.New("image not found")
+	}
+
+	err = s.storage.Delete(ctx, "images/"+img.Filename)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.Delete(ctx, userID, imageID)
 }

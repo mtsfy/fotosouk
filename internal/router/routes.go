@@ -11,10 +11,11 @@ func SetupRoutes(app *fiber.App, imgSvc *image.ImageService, authSvc *auth.AuthS
 	app.Post("/login", auth.HandleLogin(authSvc))
 	app.Post("/refresh", auth.HandleRefresh(authSvc))
 
-	protected := app.Group("/images")
-	protected.Use(auth.JWTMiddleware())
-	protected.Post("/", image.HandleUploadImage(imgSvc))
-	protected.Get("/", image.HandleGetAllImages(imgSvc))
-	protected.Post("/:id/transform", image.HandleTransform(imgSvc))
-	protected.Get("/:id", image.HandleGetImage(imgSvc))
+	images := app.Group("/images")
+	images.Use(auth.JWTMiddleware())
+	images.Post("/", image.HandleUploadImage(imgSvc))
+	images.Get("/", image.HandleGetAllImages(imgSvc))
+	images.Post("/:id/transform", image.HandleTransform(imgSvc))
+	images.Get("/:id", image.HandleGetImage(imgSvc))
+	images.Delete("/:id", image.HandleDeleteImage(imgSvc))
 }

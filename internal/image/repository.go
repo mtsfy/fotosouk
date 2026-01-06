@@ -12,6 +12,7 @@ type ImageRepository interface {
 	ListByUser(ctx context.Context, userID int) ([]*models.Image, error)
 	GetImageByID(ctx context.Context, userID int, imgID int) (*models.Image, error)
 	Update(ctx context.Context, image *models.Image, userID int) (*models.Image, error)
+	Delete(ctx context.Context, userID int, imgID int) error
 }
 
 type PgRepo struct{}
@@ -48,4 +49,8 @@ func (r *PgRepo) Update(ctx context.Context, image *models.Image, userID int) (*
 		Format:   image.Format,
 	}).First(&newImg)
 	return newImg, result.Error
+}
+
+func (r *PgRepo) Delete(ctx context.Context, userID int, imgID int) error {
+	return database.DB.WithContext(ctx).Where("id = ? AND user_id = ?", imgID, userID).Delete(&models.Image{}).Error
 }

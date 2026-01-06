@@ -202,3 +202,39 @@ func HandleTransform(svc *ImageService) fiber.Handler {
 		})
 	}
 }
+
+func HandleDeleteImage(svc *ImageService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		token, ok := c.Locals("jwt").(*jwt.Token)
+		if !ok {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+
+		claims := token.Claims.(jwt.MapClaims)
+
+		uid, ok := claims["user_id"].(float64)
+		if !ok {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+
+		userID := int(uid)
+		id := c.Params("id")
+		imgID, err := strconv.Atoi(id)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "invalid image id",
+			})
+		}
+
+		err = svc.DeleteImage(c.Context(), userID, imgID)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message": "image deleted successfully",
+		})
+	}
+}

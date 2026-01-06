@@ -15,6 +15,7 @@ import (
 type Storage interface {
 	Upload(ctx context.Context, path string, file io.Reader) (string, error)
 	Download(ctx context.Context, url string) ([]byte, error)
+	Delete(ctx context.Context, path string) error
 }
 
 type S3Storage struct {
@@ -77,4 +78,12 @@ func (s *S3Storage) Download(ctx context.Context, url string) ([]byte, error) {
 		return nil, err
 	}
 	return img, nil
+}
+
+func (s *S3Storage) Delete(ctx context.Context, path string) error {
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(path),
+	})
+	return err
 }
