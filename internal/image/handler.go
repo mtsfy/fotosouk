@@ -1,8 +1,6 @@
 package image
 
 import (
-	"errors"
-	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -157,19 +155,50 @@ type TransformRequest struct {
 
 func HandleTransform(svc *ImageService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		imgID := c.Params("id")
-		if imgID == "" {
-			return errors.New("imgID required")
+		token, ok := c.Locals("jwt").(*jwt.Token)
+		if !ok {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+
+		claims := token.Claims.(jwt.MapClaims)
+
+		uid, ok := claims["user_id"].(float64)
+		if !ok {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+
+		userID := int(uid)
+		id := c.Params("id")
+		imgID, err := strconv.Atoi(id)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "invalid image id",
+			})
 		}
 
 		var req TransformRequest
 		if err := c.BodyParser(&req); err != nil {
-			return c.Status(400).JSON(fiber.Map{
-				"message": err.Error(),
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": err.Error(),
 			})
 		}
 
-		fmt.Println(imgID)
-		return nil
+		img, err := svc.TransformImage(c.Context(), userID, imgID, (*TransformOptions)(&req.Transformations))
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"id":         img.ID,
+			"width":      img.Width,
+			"height":     img.Height,
+			"filename":   img.Filename,
+			"url":        img.Url,
+			"mime_type":  img.MimeType,
+			"file_size":  img.FileSize,
+			"updated_at": img.UpdatedAt,
+		})
 	}
 }
