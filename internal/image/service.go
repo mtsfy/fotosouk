@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/jpeg"
 	_ "image/jpeg"
+	"image/png"
 	_ "image/png"
 	"io"
 	"math"
@@ -78,6 +80,84 @@ func (s *ImageService) GetImageDetail(ctx context.Context, userID int, imgID int
 	return s.repo.GetImageByID(ctx, userID, imgID)
 }
 
-func (s *ImageService) TransformImage(ctx context.Context) (*models.Image, error) {
-	return nil, nil
+type TransformOptions struct {
+	Resize struct {
+		Width  int
+		Height int
+	}
+	Crop struct {
+		Width  int
+		Height int
+		X      int
+		Y      int
+	}
+	Rotate  int
+	Format  string
+	Filters struct {
+		Grayscale bool
+		Sepia     bool
+	}
+}
+
+func (s *ImageService) TransformImage(ctx context.Context, userID, imageID int, opts *TransformOptions) (*models.Image, error) {
+	ogImg, err := s.repo.GetImageByID(ctx, userID, imageID)
+	if err != nil {
+		return nil, errors.New("image not found")
+	}
+
+	imgData, err := s.storage.Download(ctx, ogImg.Url)
+	if err != nil {
+		return nil, err
+	}
+
+	img, format, err := image.Decode(bytes.NewReader(imgData))
+	if err != nil {
+		return nil, errors.New("failed to decode image")
+	}
+
+	if opts.Crop.Width > 0 && opts.Crop.Height > 0 {
+		img, err = s.transformer.Crop(ctx, img, opts.Crop.X, opts.Crop.Y, opts.Crop.Width, opts.Crop.Height)
+		if err != nil {
+			return nil, fmt.Errorf("failed to crop: %w", err)
+		}
+	}
+
+	if opts.Resize.Width > 0 && opts.Resize.Height > 0 {
+		img, err = s.transformer.Resize(ctx, img, opts.Resize.Width, opts.Resize.Height)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resize: %w", err)
+		}
+	}
+
+	outFormat := opts.Format
+	if outFormat == "" {
+		outFormat = format
+	}
+
+	var buf bytes.Buffer
+	switch outFormat {
+	case "jpeg", "jpg":
+		err = jpeg.Encode(&buf, img, &jpeg.Options{Quality: 90})
+		ogImg.MimeType = "image/jpeg"
+	case "png":
+		err = png.Encode(&buf, img)
+		ogImg.MimeType = "image/png"
+	default:
+		return nil, errors.New("unsupported output format")
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = s.storage.Upload(ctx, "images/"+ogImg.Filename, bytes.NewReader(buf.Bytes()))
+	if err != nil {
+		return nil, err
+	}
+
+	ogImg.Width = img.Bounds().Dx()
+	ogImg.Height = img.Bounds().Dy()
+	ogImg.FileSize = int64(buf.Len())
+
+	return s.repo.Update(ctx, ogImg, userID)
 }
