@@ -17,6 +17,7 @@ type Transformer interface {
 	Crop(ctx context.Context, imgData []byte, width, height int, format string) ([]byte, error)
 	Resize(ctx context.Context, imgData []byte, width, height int, format string) ([]byte, error)
 	Rotate(ctx context.Context, imgData []byte, degrees int, format string) ([]byte, error)
+	Grayscale(ctx context.Context, imgData []byte, format string) ([]byte, error)
 }
 
 type ImageTransformer struct{}
@@ -65,6 +66,15 @@ func (t *ImageTransformer) Rotate(ctx context.Context, imgData []byte, degrees i
 	}
 
 	return encodeImage(rotated, format)
+}
+
+func (t *ImageTransformer) Grayscale(ctx context.Context, imgData []byte, format string) ([]byte, error) {
+	img, err := imaging.Decode(bytes.NewReader(imgData))
+	if err != nil {
+		return nil, err
+	}
+	gray := imaging.Grayscale(img)
+	return encodeImage(gray, format)
 }
 
 func encodeImage(img image.Image, format string) ([]byte, error) {

@@ -139,6 +139,13 @@ func (s *ImageService) TransformImage(ctx context.Context, userID, imageID int, 
 		}
 	}
 
+	if opts.Filters.Grayscale {
+		imgData, err = s.transformer.Grayscale(ctx, imgData, format)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	width, height, err := transformer.GetImageSize(imgData)
 	if err != nil {
 		return nil, err
