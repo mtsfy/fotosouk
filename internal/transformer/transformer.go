@@ -18,6 +18,7 @@ type Transformer interface {
 	Resize(ctx context.Context, imgData []byte, width, height int, format string) ([]byte, error)
 	Rotate(ctx context.Context, imgData []byte, degrees int, format string) ([]byte, error)
 	Grayscale(ctx context.Context, imgData []byte, format string) ([]byte, error)
+	Sepia(ctx context.Context, imgData []byte, format string) ([]byte, error)
 }
 
 type ImageTransformer struct{}
@@ -75,6 +76,24 @@ func (t *ImageTransformer) Grayscale(ctx context.Context, imgData []byte, format
 	}
 	gray := imaging.Grayscale(img)
 	return encodeImage(gray, format)
+}
+
+func (t *ImageTransformer) Sepia(ctx context.Context, imgData []byte, format string) ([]byte, error) {
+	img, err := imaging.Decode(bytes.NewReader(imgData))
+	if err != nil {
+		return nil, err
+	}
+	gray := imaging.Grayscale(img)
+	sepia := imaging.AdjustFunc(gray, func(c color.NRGBA) color.NRGBA {
+		r := float64(c.R)
+		return color.NRGBA{
+			R: uint8(min(255, r*1.2)),
+			G: uint8(r),
+			B: uint8(r * 0.8),
+			A: c.A,
+		}
+	})
+	return encodeImage(sepia, format)
 }
 
 func encodeImage(img image.Image, format string) ([]byte, error) {

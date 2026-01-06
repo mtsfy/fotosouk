@@ -146,6 +146,13 @@ func (s *ImageService) TransformImage(ctx context.Context, userID, imageID int, 
 		}
 	}
 
+	if opts.Filters.Sepia {
+		imgData, err = s.transformer.Sepia(ctx, imgData, format)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	width, height, err := transformer.GetImageSize(imgData)
 	if err != nil {
 		return nil, err
