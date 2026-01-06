@@ -6,9 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"image/jpeg"
 	_ "image/jpeg"
-	"image/png"
 	_ "image/png"
 	"io"
 	"math"
@@ -110,54 +108,57 @@ func (s *ImageService) TransformImage(ctx context.Context, userID, imageID int, 
 		return nil, err
 	}
 
-	img, format, err := image.Decode(bytes.NewReader(imgData))
-	if err != nil {
-		return nil, errors.New("failed to decode image")
+	format := opts.Format
+	if format == "" {
+		format = ogImg.MimeType
 	}
 
+	fmt.Printf("Original dimensions: %d x %d\n", ogImg.Width, ogImg.Height)
+
 	if opts.Crop.Width > 0 && opts.Crop.Height > 0 {
-		img, err = s.transformer.Crop(ctx, img, opts.Crop.X, opts.Crop.Y, opts.Crop.Width, opts.Crop.Height)
+		imgData, err = s.transformer.Crop(ctx, imgData, opts.Crop.Width, opts.Crop.Height, format)
 		if err != nil {
-			return nil, fmt.Errorf("failed to crop: %w", err)
+			return nil, err
 		}
 	}
 
 	if opts.Resize.Width > 0 && opts.Resize.Height > 0 {
-		img, err = s.transformer.Resize(ctx, img, opts.Resize.Width, opts.Resize.Height)
+		imgData, err = s.transformer.Resize(ctx, imgData, opts.Resize.Width, opts.Resize.Height, format)
 		if err != nil {
-			return nil, fmt.Errorf("failed to resize: %w", err)
+			return nil, err
 		}
 	}
 
-	outFormat := opts.Format
-	if outFormat == "" {
-		outFormat = format
+	if opts.Rotate != 0 {
+		if opts.Rotate%90 != 0 {
+			return nil, errors.New("rotation must be a multiple of 90 degrees")
+		}
+		imgData, err = s.transformer.Rotate(ctx, imgData, opts.Rotate, format)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	var buf bytes.Buffer
-	switch outFormat {
-	case "jpeg", "jpg":
-		err = jpeg.Encode(&buf, img, &jpeg.Options{Quality: 90})
-		ogImg.MimeType = "image/jpeg"
-	case "png":
-		err = png.Encode(&buf, img)
+	width, height, err := transformer.GetImageSize(imgData)
+	if err != nil {
+		return nil, err
+	}
+	ogImg.Width = width
+	ogImg.Height = height
+
+	if strings.Contains(format, "png") {
 		ogImg.MimeType = "image/png"
-	default:
-		return nil, errors.New("unsupported output format")
+	} else {
+		ogImg.MimeType = "image/jpeg"
 	}
 
+	newUrl, err := s.storage.Upload(ctx, "images/"+ogImg.Filename, bytes.NewReader(imgData))
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = s.storage.Upload(ctx, "images/"+ogImg.Filename, bytes.NewReader(buf.Bytes()))
-	if err != nil {
-		return nil, err
-	}
-
-	ogImg.Width = img.Bounds().Dx()
-	ogImg.Height = img.Bounds().Dy()
-	ogImg.FileSize = int64(buf.Len())
+	ogImg.FileSize = int64(len(imgData))
+	ogImg.Url = newUrl
 
 	return s.repo.Update(ctx, ogImg, userID)
 }
