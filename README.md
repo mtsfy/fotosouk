@@ -6,7 +6,7 @@
 
 ## :page_facing_up: Description
 
-Fast and scalable image processing backend service. Upload images, apply transformations (resize, crop, rotate, filters), retrieve in different formats, and manage your image library with user authentication. Built with Go, PostgreSQL, and AWS S3.
+Fast and simple image processing backend service. Upload images, apply transformations (resize, crop, rotate, filters), retrieve in different formats, and manage your image library with user authentication.
 
 ## :hammer_and_wrench: Development
 
